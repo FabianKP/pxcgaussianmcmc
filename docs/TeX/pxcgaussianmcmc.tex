@@ -1,0 +1,118 @@
+
+\documentclass[10pt]{article}
+
+%~~~~~~~~~~
+% preamble
+%~~~~~~~~~~
+
+%'
+%' common packages
+%'
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath,amssymb,dsfont}
+\numberwithin{equation}{section}
+\usepackage{microtype}
+\usepackage{graphicx,tikz,pgfplots}
+\graphicspath{{images/}}
+\pgfplotsset{compat=newest}
+\usepackage[hyperref,amsmath,thmmarks]{ntheorem}
+\usepackage{aliascnt}
+\usepackage[a4paper,centering,bindingoffset=0cm,marginpar=2cm,margin=2.5cm]{geometry}
+%\usepackage[pagestyles]{titlesec}
+\usepackage[font=footnotesize,format=plain,labelfont=sc,textfont=sl,width=0.75\textwidth,labelsep=period]{caption}
+\usepackage{bm}
+\usepackage{bbm}
+
+%'
+%' biblatex
+%'
+\usepackage[backend=biber,maxnames=10,backref=true,hyperref=true,giveninits=true,safeinputenc]{biblatex}
+\bibliography{proximal_mcmc.bib}
+
+
+\DefineBibliographyStrings{english}{%
+	backrefpage = {cited on page},
+	backrefpages = {cited on pages},
+}
+
+
+\title{Proximal MCMC for linearly constrained multivariate normal distributions}
+\author{FabianKP}
+\date{}
+
+%'
+%' writes the title always in quotes.
+%'
+\DeclareFieldFormat[report]{title}{``#1''}
+\DeclareFieldFormat[book]{title}{``#1''}
+\AtEveryBibitem{\clearfield{url}}
+\AtEveryBibitem{\clearfield{note}}
+
+
+\usepackage[pdftex,colorlinks=true,linkcolor=blue,citecolor=green,urlcolor=blue,bookmarks=true,bookmarksnumbered=true]{hyperref}
+\hypersetup
+{
+    pdfauthor={FabianKP},
+    pdfsubject={Proximal MCMC for linearly constrained multivariate normal distributions},
+    pdftitle={}
+}
+\def\sectionautorefname{Section}
+\def\subsectionautorefname{Section}
+\def\subsubsectionautorefname{Section}
+
+\graphicspath{{images/}}
+
+%
+% --------------- ABBREVIATIONS
+%
+
+\include{abbreviations}
+
+
+%
+% --------------- BEGIN DOCUMENT
+%
+
+
+\begin{document}
+
+\maketitle
+
+\section*{Notation}
+
+\begin{itemize}
+\item $\indicator{C}$ denotes the indicator function,
+\begin{align*}
+\indicator{C}(x) := \begin{cases}
+1, & \text{if } x \in C, \\
+0, & \text{otherwise}.
+\end{cases}
+\end{align*}
+\end{itemize}
+
+
+\section{Introduction}
+
+We consider linearly constrained multivariate normal distributions on $\R^d$. Such distributions have the general form
+
+\begin{align*}
+p(\bm x) & = (2 \pi)^{d/2} \det(\bm \Sigma)^{-1} \exp( - \frac{1}{2} (\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m) \indicator{C}(\bm x), \\
+C &= \Set{\bm x \in \R^d}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
+\end{align*}
+
+Sampling from this distribution is important in a range of applications, in particular in Bayesian inverse problems with constraints. In such applications, the dimension $d$ will often be very large, and the covariance matrix $\bm \Sigma$ will sometimes be ill-conditioned. In that case, sampling from $p$ using non-specialized methods does not work.
+
+One method that was proposed for sampling from ill-conditioned log-concave distributions such as these is the so-called \textbf{proximal Markov chain Monte Carlo method} (proximal MCMC) \cite{Per16, DurMouPer18}.
+
+
+
+
+
+
+\addcontentsline{toc}{section}{Bibliography}
+
+\printbibliography
+
+\end{document}
