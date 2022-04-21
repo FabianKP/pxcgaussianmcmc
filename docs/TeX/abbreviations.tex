@@ -153,16 +153,4 @@
 }
 
 %norms and inner products
-\newcommand{\Lp}[2]{\Exp { #1^{#2} }^{1 / {#2} } }
-\newcommand{\hsnorm}[1]{ \norm{#1}_\mathrm{HS} }
-\newcommand{\Lphsnorm}[2]{ \Lp{ \hsnorm{#1}}{#2} }
-\newcommand{\Lpnorm}[2]{ \Lp{\norm{#1}}{#2}}
-\newcommand{\xinner}[2]{\inner{#1}{#2}_\XX}
-\newcommand{\xnorm}[1]{\norm{#1}_\XX}
-\newcommand{\ynorm}[1]{\norm{#1}_\YY}
-\newcommand{\xopnorm}[1]{\norm{#1}_{\BL(\XX;\XX)}}
-\newcommand{\yopnorm}[1]{ \norm{#1}_{\BL(\YY;\YY)} }
-\newcommand{\HSnorm}[1]{\norm{#1}_\mathrm{HS}}
-\newcommand{\Lpxnorm}[2]{ \Lp{\xnorm{#1}}{#2}}
-\newcommand{\Lpynorm}[2]{ \Lp{\ynorm{#1}}{#2}}
-\newcommand{\Lpxopnorm}[2]{ \Lp{\xopnorm{#1}}{#2}}
+\newcommand{\prox}[2]{\text{prox}_{#1}^{#2}}

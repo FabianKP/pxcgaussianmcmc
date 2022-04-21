@@ -24,6 +24,7 @@
 \usepackage[font=footnotesize,format=plain,labelfont=sc,textfont=sl,width=0.75\textwidth,labelsep=period]{caption}
 \usepackage{bm}
 \usepackage{bbm}
+\usepackage{algorithm, algpseudocode}
 
 %'
 %' biblatex
@@ -90,6 +91,13 @@
 0, & \text{otherwise}.
 \end{cases}
 \end{align*}
+\item $\chi_{C}$ denotes the characteristic function,
+\begin{align*}
+\chi_C(x) := \begin{cases}
+0, & \text{if } x \in C, \\
+\infty, & \text{otherwise}.
+\end{cases}
+\end{align*}
 \end{itemize}
 
 
@@ -98,13 +106,203 @@
 We consider linearly constrained multivariate normal distributions on $\R^d$. Such distributions have the general form
 
 \begin{align*}
-p(\bm x) & = (2 \pi)^{d/2} \det(\bm \Sigma)^{-1} \exp( - \frac{1}{2} (\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m) \indicator{C}(\bm x), \\
-C &= \Set{\bm x \in \R^d}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
+p(\bm x) & \propto \exp \left( - \frac{1}{2} (\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m) \right) \indicator{\mathcal C}(\bm x), \\
+\mathcal C &= \Set{\bm x \in \R^d}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
 \end{align*}
 
 Sampling from this distribution is important in a range of applications, in particular in Bayesian inverse problems with constraints. In such applications, the dimension $d$ will often be very large, and the covariance matrix $\bm \Sigma$ will sometimes be ill-conditioned. In that case, sampling from $p$ using non-specialized methods does not work.
 
 One method that was proposed for sampling from ill-conditioned log-concave distributions such as these is the so-called \textbf{proximal Markov chain Monte Carlo method} (proximal MCMC) \cite{Per16, DurMouPer18}.
+
+
+\section{Description of proximal MCMC}
+
+\subsection{Basic terminology and definitions}
+
+In the following, let $p: \R^d \to [0, \infty)$ be a probability density function of the form
+\begin{align*}
+p(\bm x) = \frac{1}{Z} e^{-f(\bm x)},
+\end{align*}
+where $Z > 0$ is a constant and $f: \R^d \to (-\infty, \infty]$ is a convex function.
+
+Given $\lambda > 0$, we define the \emph{proximal operator} $\prox{f}{\lambda}: \R^d \to \R$ associated to $f$ and $\lambda$ as
+\begin{align*}
+\prox{f}{\lambda}(\bm x) = \argmin_{\bm z} \lbrace f(z) + \frac{1}{2 \lambda} \norm{z - x}_2^2 \rbrace.
+\end{align*}
+Furthermore, we define the \emph{Moreau-Yosida envelope} $f_\lambda$ associated to $f$ and $\lambda$ as
+\begin{align*}
+f_\lambda(\bm x) = \inf_{\bm z}  \lbrace f(\bm z) + \frac{1}{2 \lambda} \norm{z - x}_2^2 \rbrace.
+\end{align*}
+
+\subsection{High-level description}
+
+\subsubsection{Px-MALA}
+
+The proximal Metropolis-adjusted Langevin algorithm (Px-MALA) is a special case of the general Metropolis-Hastings scheme. This means it creates a Markov chain $(\bm x_1, \ldots, \bm x_N)$ by repeating the following two steps for $n=0,\ldots, N$ (the first sample $x_0$ is given):
+\begin{enumerate}
+\item Given the current iterate $\bm x_n \in \R^d$, create a proposal $\bm y_{n+1} \sim q(\cdot | \bm x_n)$ from the proposal kernel $q(\cdot | \cdot)$.
+\item Compute the Hastings-ratio
+\begin{align*}
+r_{n+1} = \min \left(1, \frac{p(\bm y_n) q(\bm x_n| \bm y_n)}{p(\bm x_n) q(\bm y_n| \bm x_n)} \right).
+\end{align*}
+Then, with probabilty $r$, set $\bm x_{n+1} = \bm y_n$. Otherwise, set $\bm x_{n+1} = \bm x_n$.
+\end{enumerate}
+
+Proximal MCMC uses the following proposal kernel:
+\begin{align*}
+q(\bm y | \bm x) =  \normal\left( \prox{f}{\delta/2}(\bm x), \delta \Idmat_d \right).
+\end{align*}
+That is, given $\bm x \in \R^d$, we can generate a new proposal $\bm y$ by sampling $\bm z \sim \normal(0, \delta \Idmat)$ and then setting
+\begin{align*}
+\bm y = \prox{f}{\delta / 2}(\bm x) + \bm z.
+\end{align*}
+
+\subsubsection{MYULA}
+
+Alternatively, let
+\begin{align*}
+f(\bm x) = h(\bm x) + g(\bm x),
+\end{align*}
+where we assume that $h$ is twice continuously differentiable. In this case, we define the so-called Moreau-Yosida Unadjusted Langevin Algorithm (MYULA) by the iteration
+\begin{align*}
+& z_{n+1} \sim \normal(0, 2 \gamma_{n+1} \Idmat), \\
+& x_{n+1} = x_n - \gamma_{n+1} \left(\nabla h(x_n) + \lambda^{-1}(x_n - \prox{g}{\lambda}(x_n) \right) + z_{n+1}, \\
+\end{align*}
+An important caveat for the samples obtained from MYULA is that they represent a smoothed distribution
+\begin{align*}
+p_\lambda(\bm x) = \frac{1}{Z} e^{-h(\bm x) + g_\lambda(\bm x)}.
+\end{align*}
+Hence, when estimating a quantity of interest
+\begin{align*}
+\bar \phi = \int \phi(\bm x) p(\bm x) \d x,
+\end{align*}
+instead of estimating it by an equally weighted sum over the samples,
+\begin{align*}
+\bar \phi^\text{bad} = \frac{1}{N} \sum_{n=1}^N \phi(x_n),
+\end{align*}
+one should use importance sampling,
+\begin{align*}
+\bar \phi^\text{good} = \sum_{n=1}^N w_n \phi(x_k),
+\end{align*}
+where
+\begin{align*}
+& w_n := \frac{\gamma_n e^{\bar g_\lambda(\bm x_n)}}{\sum_{m=1}^N \gamma_m e^{\bar g_\lambda(\bm x)}}, \\
+& \bar g_\lambda(\bm x) = g_\lambda(\bm x) - g(\bm x).
+\end{align*}
+
+\subsection{Specialization to constrained Gaussians}
+
+\subsubsection{Px-MALA}
+
+In our particular case, we have
+\begin{align*}
+f(\bm x) = \frac{1}{2}(\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m) + \chi_{\mathcal C}(\bm x).
+\end{align*}
+In order to evaluate the proximal operator $\prox{f}{\lambda}$, one has to solve a constrained least-squares problem
+\begin{align*}
+\prox{f}{\lambda}(\bm x) = \argmin_{\bm z} \Set{\norm{\bm \Sigma^{-1/2}(\bm z - \bm m)}_2^2 + \frac{1}{\lambda} \norm{\bm z - \bm x}_2^2}{\bm A \bm z = \bm b, \bm C \bm z \geq \bm d, \bm l \leq \bm z \leq \bm u}.
+\end{align*}
+This problem can be solved fast using any method for quadratic optimization.
+
+\subsubsection{MYULA}
+
+For MYULA, we use the following splitting:
+\begin{align*}
+& f(\bm x) = h(\bm x) + g(\bm x), \\
+& h(\bm x) = \frac{1}{2} (\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m), \\
+& g(\bm x) = \chi_{\mathcal C}(\bm x), \\
+& \mathcal C = \Set{\bm x \in \R^d}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
+\end{align*}
+Performing a MYULA-step thus requires evaluation of
+\begin{align*}
+\nabla h(\bm x) = \Sigma^{-1}(\bm x - \bm m)
+\end{align*}
+and
+\begin{align*}
+\prox{g}{\lambda}(\bm x) = \argmin_{\bm z} \Set{\norm{\bm z - \bm x}_2^2}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
+\end{align*}
+(since minimizing $\frac{1}{\lambda} \norm{\bm z - \bm x}$ is equivalent to minimizing $\norm{\bm z - \bm x}$). The latter can again be implemented using any general-purpose quadratic optimization solver.
+
+\subsection{Choosing the hyper-parameters}
+
+Finally, let us provide some guidelines on how to choose the hyperparameters for Px-MALA and MYULA:
+
+\subsubsection*{Px-MALA}
+
+The stepsize parameter $\delta$ should usually be small. A common rule-of-thumb is that one should choose $\delta$ such that the acceptance frequency is around $0.5$. Our implementation provides an option to automatically adjust $\delta$ during burnin.
+
+\subsubsection*{MYULA}
+
+The sequence of stepsizes $(\gamma_n)_{n=1}^\infty$ should be nonincreasing and satisfy $\gamma_n < \frac{2}{\mathrm{Lip}(h) + 1/\lambda}$ for all $n \in \N$, where $\mathrm{Lip}(h)$ is the Lipschitz constant of $\nabla h$. If $\mathrm{Lip}(h)$ is not known, $\gamma$ has to be tuned by hand. Since in any case $\mathrm{Lip}(h) \geq 0$, we now that $\gamma$ and $\lambda$ in any case have to satisfy the relation $\gamma \leq 2 \lambda$. Hence, in absence of further information, $\gamma = \lambda$ can be used as a default choice.
+
+\subsection{Pseudocode}
+
+\subsubsection*{Px-MALA}
+
+Note that the proposal kernel for Px-MALA satisfies
+\begin{align}
+\log q(\bm y | \bm x) = - \frac{1}{2\delta}\norm{\bm y - \prox{f}{\delta/2}(\bm x)}_2^2. \label{eq:pxmala_log_proposal}
+\end{align}
+Note that for the evaluation of the Hastings ratio, it is easier to work with log-probabilities. That is, instead of computing
+\begin{align*}
+r = \min \left( 1, \frac{p(\bm y) q(\bm x | \bm y)}{p(\bm x) q(\bm y | \bm x)} \right),
+\end{align*}
+it is better to compute (using \eqref{eq:pxmala_log_proposal})
+\begin{align*}
+s = h(\bm x) - h(\bm y) + \frac{1}{2 \delta}\norm{\bm x - \prox{f}{\delta/2}(\bm y)}_2^2 - \frac{1}{2 \delta}\norm{\bm y - \prox{f}{\delta/2}(\bm x)}_2^2
+\end{align*}
+and then to set $r = \min(1, e^s)$.
+
+\begin{algorithm}[H]
+\caption{\texttt{Px-MALA}}
+Given a feasible point $\bm x_0 \in \R^d$, $\delta > 0$, and sample size $N \in \N$;
+\begin{algorithmic}[2]\label{alg:adaptive_eki}
+\For{$n=0, 1,2,\ldots, N$}
+\State $\bm x \gets \bm x_n$;
+\State Solve
+\begin{align*}
+\min_{\bm \xi} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \xi - \bm m)}_2^2 + \frac{2}{\delta} \norm{\bm \xi - \bm x}_2^2 \rbrace \\
+\text{s. t.} & \quad \bm A \bm \xi = \bm b, \quad \bm C \bm \xi \geq \bm d, \quad \bm l \leq \bm \xi \leq \bm u,
+\end{align*}
+and store the minimizer as $\bm \xi$;
+\State Sample $\bm z \sim \normal(0, \delta \Idmat_d)$;
+\State Set $\bm y \gets \bm \xi + \bm z$;
+\State Solve
+\begin{align*}
+\min_{\bm \zeta} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \zeta - \bm m)}_2^2 + \frac{2}{\delta} \norm{\bm \zeta - \bm y_{n+1}}_2^2 \rbrace \\
+\text{s. t.} & \quad \bm A \bm \zeta = \bm b, \quad \bm C \bm \zeta \geq \bm d, \quad \bm l \leq \bm \zeta \leq \bm u,
+\end{align*}
+and store the minimizer as $\bm \zeta$;
+\State $h \gets \frac{1}{2} \norm{\bm \Sigma^{-1/2}(\bm x - \bm m)}_2^2$;
+\State $\tilde h = \frac{1}{2} \norm{\bm \Sigma^{-1/2}(\bm y - \bm m)}_2^2$;
+\State $q \gets \frac{1}{2 \delta}\norm{\bm x - \bm \xi}_2^2$;
+\State $\tilde q \gets \frac{1}{2 \delta}\norm{\bm y - \bm \zeta}_2^2$;
+\State $s \gets h - \tilde h + q - \tilde q$;
+\State $r \gets \min(1, e^s)$;
+\State Sample $\eta \sim \mathrm{U}([0,1])$;
+\If{$r \geq \eta$}
+\State $\bm x_{n+1} \gets \bm y$;
+\Else
+\State $\bm x_{n+1} \gets \bm x$;
+\EndIf
+\EndFor
+\State return $\bm x_1, \ldots, \bm x_N$;
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsubsection*{MYULA}
+
+
+
+
+\section{Indicators of convergence}
+
+Assessing the quality of an MCMC run is notoriously difficult. We present a couple of numerical quantities that allow the user to judge whether the obtained samples represent the probability distribution of interest.
+
+\subsection{$\hat R$}
+
+\subsection{Effective sample size}
 
 
 
