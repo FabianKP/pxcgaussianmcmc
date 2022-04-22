@@ -98,6 +98,7 @@
 \infty, & \text{otherwise}.
 \end{cases}
 \end{align*}
+(Not to be confused with $\chi_{q, n}^2$, which denotes the $q$-quantile of the chi-squared distribution with $n$ degrees of freedom.)
 \end{itemize}
 
 
@@ -150,11 +151,11 @@ Then, with probabilty $r$, set $\bm x_{n+1} = \bm y_n$. Otherwise, set $\bm x_{n
 
 Proximal MCMC uses the following proposal kernel:
 \begin{align*}
-q(\bm y | \bm x) =  \normal\left( \prox{f}{\delta/2}(\bm x), \delta \Idmat_d \right).
+q(\bm y | \bm x) =  \normal\left( \prox{f}{\delta}(\bm x), 2 \delta \Idmat_d \right).
 \end{align*}
-That is, given $\bm x \in \R^d$, we can generate a new proposal $\bm y$ by sampling $\bm z \sim \normal(0, \delta \Idmat)$ and then setting
+That is, given $\bm x \in \R^d$, we can generate a new proposal $\bm y$ by sampling $\bm z \sim \normal(0, \Idmat)$ and then setting
 \begin{align*}
-\bm y = \prox{f}{\delta / 2}(\bm x) + \bm z.
+\bm y = \prox{f}{\delta}(\bm x) + \sqrt{2 \delta} \bm z.
 \end{align*}
 
 \subsubsection{MYULA}
@@ -163,10 +164,10 @@ Alternatively, let
 \begin{align*}
 f(\bm x) = h(\bm x) + g(\bm x),
 \end{align*}
-where we assume that $h$ is twice continuously differentiable. In this case, we define the so-called Moreau-Yosida Unadjusted Langevin Algorithm (MYULA) by the iteration
+where we assume that $h$ is twice continuously differentiable. Let $\lambda > 0$ and $(\delta_n)_{n=1}^\infty$ be a nonincreasing sequence of positive stepsizes. We define the so-called \emph{Moreau-Yosida Unadjusted Langevin Algorithm} (MYULA) by the iteration
 \begin{align*}
-& z_{n+1} \sim \normal(0, 2 \gamma_{n+1} \Idmat), \\
-& x_{n+1} = x_n - \gamma_{n+1} \left(\nabla h(x_n) + \lambda^{-1}(x_n - \prox{g}{\lambda}(x_n) \right) + z_{n+1}, \\
+& z_{n+1} \sim \normal(0, \Idmat), \\
+& x_{n+1} = x_n - \delta_{n+1} \left(\nabla h(x_n) + \lambda^{-1}(x_n - \prox{g}{\lambda}(x_n) \right) + \sqrt{2 \delta_{n+1}} z_{n+1}, \\
 \end{align*}
 An important caveat for the samples obtained from MYULA is that they represent a smoothed distribution
 \begin{align*}
@@ -186,7 +187,7 @@ one should use importance sampling,
 \end{align*}
 where
 \begin{align*}
-& w_n := \frac{\gamma_n e^{\bar g_\lambda(\bm x_n)}}{\sum_{m=1}^N \gamma_m e^{\bar g_\lambda(\bm x)}}, \\
+& w_n := \frac{\delta_n e^{\bar g_\lambda(\bm x_n)}}{\sum_{m=1}^N \delta_m e^{\bar g_\lambda(\bm x)}}, \\
 & \bar g_\lambda(\bm x) = g_\lambda(\bm x) - g(\bm x).
 \end{align*}
 
@@ -229,7 +230,7 @@ Finally, let us provide some guidelines on how to choose the hyperparameters for
 
 \subsubsection*{Px-MALA}
 
-The stepsize parameter $\delta$ should usually be small. A common rule-of-thumb is that one should choose $\delta$ such that the acceptance frequency is around $0.5$. Our implementation provides an option to automatically adjust $\delta$ during burnin.
+The stepsize parameter $\delta$ should usually be small. A common rule-of-thumb is that one should choose $\delta$ such that the acceptance frequency is around $0.5$. Our implementation provides an option to automatically adapt $\delta$ during burnin to achieve a prescribed acceptance frequency.
 
 \subsubsection*{MYULA}
 
@@ -241,7 +242,7 @@ The sequence of stepsizes $(\gamma_n)_{n=1}^\infty$ should be nonincreasing and 
 
 Note that the proposal kernel for Px-MALA satisfies
 \begin{align}
-\log q(\bm y | \bm x) = - \frac{1}{2\delta}\norm{\bm y - \prox{f}{\delta/2}(\bm x)}_2^2. \label{eq:pxmala_log_proposal}
+\log q(\bm y | \bm x) = - \frac{1}{4\delta}\norm{\bm y - \prox{f}{\delta}(\bm x)}_2^2. \label{eq:pxmala_log_proposal}
 \end{align}
 Note that for the evaluation of the Hastings ratio, it is easier to work with log-probabilities. That is, instead of computing
 \begin{align*}
@@ -249,34 +250,34 @@ r = \min \left( 1, \frac{p(\bm y) q(\bm x | \bm y)}{p(\bm x) q(\bm y | \bm x)} \
 \end{align*}
 it is better to compute (using \eqref{eq:pxmala_log_proposal})
 \begin{align*}
-s = h(\bm x) - h(\bm y) + \frac{1}{2 \delta}\norm{\bm x - \prox{f}{\delta/2}(\bm y)}_2^2 - \frac{1}{2 \delta}\norm{\bm y - \prox{f}{\delta/2}(\bm x)}_2^2
+s = h(\bm x) - h(\bm y) + \frac{1}{4 \delta}\norm{\bm x - \prox{f}{\delta}(\bm y)}_2^2 - \frac{1}{4 \delta}\norm{\bm y - \prox{f}{\delta}(\bm x)}_2^2
 \end{align*}
 and then to set $r = \min(1, e^s)$.
 
 \begin{algorithm}[H]
 \caption{\texttt{Px-MALA}}
 Given a feasible point $\bm x_0 \in \R^d$, $\delta > 0$, and sample size $N \in \N$;
-\begin{algorithmic}[2]\label{alg:adaptive_eki}
+\begin{algorithmic}[2]\label{alg:pxmala}
 \For{$n=0, 1,2,\ldots, N$}
 \State $\bm x \gets \bm x_n$;
 \State Solve
 \begin{align*}
-\min_{\bm \xi} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \xi - \bm m)}_2^2 + \frac{2}{\delta} \norm{\bm \xi - \bm x}_2^2 \rbrace \\
+\min_{\bm \xi} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \xi - \bm m)}_2^2 + \frac{1}{\delta} \norm{\bm \xi - \bm x}_2^2 \rbrace \\
 \text{s. t.} & \quad \bm A \bm \xi = \bm b, \quad \bm C \bm \xi \geq \bm d, \quad \bm l \leq \bm \xi \leq \bm u,
 \end{align*}
 and store the minimizer as $\bm \xi$;
-\State Sample $\bm z \sim \normal(0, \delta \Idmat_d)$;
-\State Set $\bm y \gets \bm \xi + \bm z$;
+\State Sample $\bm z \sim \normal(0, \Idmat_d)$;
+\State Set $\bm y \gets \bm \xi + \sqrt{2 \delta} \bm z$;
 \State Solve
 \begin{align*}
-\min_{\bm \zeta} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \zeta - \bm m)}_2^2 + \frac{2}{\delta} \norm{\bm \zeta - \bm y_{n+1}}_2^2 \rbrace \\
+\min_{\bm \zeta} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \zeta - \bm m)}_2^2 + \frac{1}{\delta} \norm{\bm \zeta - \bm y_{n+1}}_2^2 \rbrace \\
 \text{s. t.} & \quad \bm A \bm \zeta = \bm b, \quad \bm C \bm \zeta \geq \bm d, \quad \bm l \leq \bm \zeta \leq \bm u,
 \end{align*}
 and store the minimizer as $\bm \zeta$;
 \State $h \gets \frac{1}{2} \norm{\bm \Sigma^{-1/2}(\bm x - \bm m)}_2^2$;
 \State $\tilde h = \frac{1}{2} \norm{\bm \Sigma^{-1/2}(\bm y - \bm m)}_2^2$;
-\State $q \gets \frac{1}{2 \delta}\norm{\bm x - \bm \xi}_2^2$;
-\State $\tilde q \gets \frac{1}{2 \delta}\norm{\bm y - \bm \zeta}_2^2$;
+\State $q \gets \frac{1}{4 \delta}\norm{\bm x - \bm \xi}_2^2$;
+\State $\tilde q \gets \frac{1}{4 \delta}\norm{\bm y - \bm \zeta}_2^2$;
 \State $s \gets h - \tilde h + q - \tilde q$;
 \State $r \gets \min(1, e^s)$;
 \State Sample $\eta \sim \mathrm{U}([0,1])$;
@@ -293,6 +294,24 @@ and store the minimizer as $\bm \zeta$;
 
 \subsubsection*{MYULA}
 
+\begin{algorithm}[H]
+\caption{\texttt{MYULA}}
+Given a feasible point $\bm x_0 \in \R^d$, sample size $N \in \N$, $\lambda > 0$, and a nonincreasing sequence $(\delta_n)_{n=1}^N > 0$;
+\begin{algorithmic}[2]\label{alg:myula}
+\For{$n=0, 1,2,\ldots, N$}
+\State $\bm x \gets \bm x_n$;
+\State Solve
+\begin{align*}
+\min_{\bm y} \quad & \norm{\bm y - \bm x}_2^2 \\
+\text{s. t.} \quad & \bm A \bm y = \bm b, \quad \bm C \bm y \geq \bm d, \quad \bm \ell \leq \bm y \leq \bm u.
+\end{align*}
+\State $\bm u \gets \bm \Sigma^{-1}(\bm x - \bm m)$;
+\State $\bm z \gets \normal(\bm 0, \Idmat_d)$;
+\State $\bm x_{n+1} \gets \bm x - \delta_{n+1} (\bm y - \lambda^{-1}(\bm x - \bm u) + \sqrt{2 \delta_{n+1}} \bm z$;
+\EndFor
+\State return $\bm x_1, \ldots, \bm x_N$;
+\end{algorithmic}
+\end{algorithm}
 
 
 
@@ -300,9 +319,99 @@ and store the minimizer as $\bm \zeta$;
 
 Assessing the quality of an MCMC run is notoriously difficult. We present a couple of numerical quantities that allow the user to judge whether the obtained samples represent the probability distribution of interest.
 
-\subsection{$\hat R$}
+In the following, we assume that we are given $M$ independently run MCMC chains $(\*x_n^{(1)})_{n=1}^N, \ldots, (\*x_n^{(M)})_{n=1}^N$, each of length $N$. The subsequent computations also make sense for a single chain ($M=1$), but it is in general recommended to perform multiple MCMC runs if at all possible.
+
+Let us fix some notation that we will make heavy use of in the rest of this section: For $m=1,\ldots, M$, let
+\begin{align*}
+\bar{\*x}_N^{m} = \frac{1}{N} \sum_{n=1}^N \*x_n^{(m)}
+\end{align*}
+be the sample average and
+\begin{align*}
+\*\Sigma_m = \frac{1}{N-1} \sum_{n=1}^N (x_n^{(m)} - \bar x^{(m)}) (x_n^{(m)} - \bar x^{(m)})^\top
+\end{align*}
+be the sample covariance of the $m$-th chain. Furthermore, let
+\begin{align*}
+\bar{\*x}_N = \frac{1}{M} \sum_{m=1}^M \bar{\*x}_N^{m}
+\end{align*}
+be the sample average and
+\begin{align*}
+\*\Sigma = \frac{1}{M} \sum_{m=1}^M \* \Sigma_m
+\end{align*}
+be the sample covariance of all chains.
+
+
+
 
 \subsection{Effective sample size}
+
+A very intuitive tool for a-posteriori assessments of the quality of a given MCMC chain is the so-called \emph{effective sample size}. Its multivariate version is described in \cite{VatFleJon19}. Intuitively, the effective sample size gives the number of independent samples with the same estimation power as the MCMC samples. That is, estimating a quantity of interest using an MCMC sample with effective sample size $N_\text{eff}$ is comparable to an estimate that uses $N_\text{eff}$ independent samples from the posterior distribution.
+
+\subsubsection*{Definition of the effective sample size estimator}
+
+The effective sample size can be estimated by
+\begin{align*}
+\widehat {\mathrm{ESS}} = MN \left(\frac{\det(\*\Sigma)}{\det(\*T_L)} \right)^{1/d},
+\end{align*}
+where
+\begin{itemize}
+\item $\* \Sigma$ is the sample covariance matrix of all chains as described above;
+\item $\hat{\* T}_L$ is the so-called \emph{multivariate replicated lugsail batch means estimator} for the Monte Carlo standard error. Given a batch size $b < N$, let $a = \lfloor b \cdot N \rfloor$ denote the number of batches. For $i = 1,\ldots, a$, let
+\begin{align*}
+\hat{\bm x}_i^{(m)} = \frac{1}{b} \sum_{j=1}^b \bm x_{(i-1)b + j}^{(m)}
+\end{align*}
+denote the $i$-th batch mean for the $m$-th chain. Let
+\begin{align*}
+\hat{\*T}_b = \frac{b}{aM - 1} \sum_{m=1}^M \sum_{i=1}^a (\bar{\* x}_i^{(m)} - \bar{\*x})(\bar{\* x}_i^{(m)} - \bar{\*x})^\top.
+\end{align*}
+Then, $\hat{\*T}_L$ is defined as
+\begin{align*}
+\hat T_L = 2 \hat T_b - \hat T_{b/3}.
+\end{align*}
+\end{itemize}
+
+\subsubsection*{Usage}
+
+The authors of \cite{VatFleJon19} propose to stop the sampling once
+\begin{align*}
+\widehat{\mathrm{ESS}} \geq W(d, \alpha, \epsilon),
+\end{align*}
+with the number $W(d, \alpha, \epsilon)$ defined as 
+\begin{align}
+W(d, \alpha, \epsilon) = \frac{2^{2/d} \pi \chi^2_{1-\alpha,d}}{(d \Gamma(d/2))^{2/d} \epsilon^2}, \label{eq:w_d_alpha_epsilon}
+\end{align}
+where
+\begin{itemize}
+\item $d$ is the dimension of the parameter space.
+\item $\alpha$ is the desired confidence level (e.g. $\alpha=0.05$ for 95\%-confidence.
+\item $\epsilon$ is the desired relative precision. That is, a value of $\epsilon=0.1$ means that approximately 10\% of the variability in the samples come from the Monte Carlo error.
+\item $\chi^2_{1-\alpha, d}$ is the $(1-\alpha)$-percentile of the chi-squared distribution with $d$ degrees of freedom.
+\item $\Gamma$ is the gamma function, $\Gamma(z) = \int_0^\infty x^{z-1} e^{-x} \d x$.
+\end{itemize}
+
+\subsection{R hat}
+
+The $\hat R$ statistic (also known as Gelman-Rubin statistic or  potential scale reduction factor (PSRF)) is the most widely used convergence diagnostic for MCMC. The current state-of-the-art for computing $\hat R$ in the univariate case is described in \cite{VehGelSimCarBur21}.
+
+We implement the stabilized, multivariate version of $\hat R$ described in \cite{VatKnu21}. The precise definition is provided next.
+
+\subsubsection*{Definition of R hat}
+
+In \cite{VatKnu21}, the multivariate stabilized $\hat R$ statistic is defined as
+\begin{align*}
+\hat R^d_L = \sqrt{ \frac{N-1}{N} + \frac{\det(\*\Sigma^{-1} \hat{\* T}_L)^{1/d}}{N} },
+\end{align*}
+where $\*\Sigma$ and $\hat{\*T}_L$ are as above.
+
+
+\subsubsection*{Usage}
+
+A simple rule-of-thumb \cite{VehGelSimCarBur21} is that samples should only be used if $\hat R^d < 1.01$.
+
+The authors of \cite{VatKnu21} provide an alternative criterion that is motivated by the relation of $\hat R^d$ to the effective sample size. They recommend that samples should only be used if
+\begin{align*}
+\hat R^d_L \leq \sqrt{1 + \frac{M}{W(\alpha, \epsilon, d)}},
+\end{align*}
+where $W(\alpha, \epsilon, d)$ is defined in \eqref{eq:w_d_alpha_epsilon}.
 
 
 
