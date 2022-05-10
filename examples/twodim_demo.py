@@ -6,6 +6,11 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from examples.two_dimensional_example import two_dimensional_example
+from pxcgaussianmcmc import pxcgaussian
+
+
+num_warmup = 100
+num_samples = 1000
 
 
 def twodim_demo():
@@ -18,7 +23,8 @@ def twodim_demo():
     plt.scatter(x_map[0], x_map[1], label="MAP")
     plt.scatter(x_true[0], x_true[1], label="Ground truth")
 
-    # create some pseudosamples
+    # Get samples.
+    samples = pxcgaussian(num_warmup=num_warmup, num_samples=num_samples, )
     x_sample = np.random.randn(100, 2)
     plt.scatter(x_sample[:, 0], x_sample[:, 1], s=3)
     plt.legend()

@@ -10,7 +10,7 @@ def pxcgaussian(num_warmup: int, num_samples: int, Sigma: np.ndarray, m: np.ndar
                 b: Optional[np.ndarray], lb: Optional[np.ndarray], ub: Optional[np.ndarray]) -> PxcResult:
     """
     Samples from the constrained Gaussian distribution
-        log p(x) = 0.5 * (x - m).T @ Sigma @ (x - m) + const.,
+        log p(x) = 0.5 * (L x - b).T @ Gamma @ (Lx - b) + (x - m).T @ Sigma @ (x - m) + const.,
         truncated to the set
         A @ x = b, C @ x >= d, lb <= x <= ub.
 

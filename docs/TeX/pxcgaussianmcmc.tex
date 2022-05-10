@@ -106,14 +106,35 @@
 
 We consider linearly constrained multivariate normal distributions on $\R^d$. Such distributions have the general form
 
-\begin{align*}
+\begin{equation}
+\begin{aligned}
 p(\bm x) & \propto \exp \left( - \frac{1}{2} (\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m) \right) \indicator{\mathcal C}(\bm x), \\
 \mathcal C &= \Set{\bm x \in \R^d}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
-\end{align*}
+\end{aligned}\label{eq:pdf_basic_form}
+\end{equation}
 
 Sampling from this distribution is important in a range of applications, in particular in Bayesian inverse problems with constraints. In such applications, the dimension $d$ will often be very large, and the covariance matrix $\bm \Sigma$ will sometimes be ill-conditioned. In that case, sampling from $p$ using non-specialized methods does not work.
 
 One method that was proposed for sampling from ill-conditioned log-concave distributions such as these is the so-called \textbf{proximal Markov chain Monte Carlo method} (proximal MCMC) \cite{Per16, DurMouPer18}.
+
+\subsection{Bringing your system in the right form}
+
+If your denstiy comes from regression or Bayesian parameter estimation, it might not directly be available in the above form. In such situations, the density will be of the form
+\begin{align}
+p(\*x) \propto \exp \left( - \frac{1}{2} (L x - y)^\top R^{-1} (Lx - y) - \frac{1}{2} (x - z)^\top P^{-1} (x - z) \right) \indicator{\mathcal C}(\bm x), \label{eq:pdf_likelihood_form}
+\end{align}
+where $L: \R^d \to \R^m$ is some sort of observation matrix, $P \in \R^{d \times d}$ and $R \in \R^{m \times m}$ are the covariance matrices of the prior and likelihood, and $\indicator{\mathcal C}$ is as above. This distribution can be brought in the form \eqref{eq:pdf_basic_form} using the following identities:
+\begin{align}
+\* \Sigma^{-1} &= P^{-1} + L^\top R^{-1} L, \label{eq:sigma_formula} \\
+\* m &= z + \Sigma^{-1} L^\top R^{-1} (y - L z). \label{eq:m_formula}
+\end{align}
+If you don't want the prior term in \eqref{eq:pdf_likelihood_form} (i.e. the term with $P^{-1}$), the corresponding formulas are
+\begin{align*}
+\* \Sigma^{-1} & = (L^\top R^{-1} L)^{-1}, \\
+\* m & = \Sigma^{-1} L^\top R^{-1} y.
+\end{align*}
+
+
 
 
 \section{Description of proximal MCMC}
