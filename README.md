@@ -10,7 +10,10 @@ For a high-level mathematical documentation, see [here]().
 TODO
 ----
 
-1. Write mathematical documentation.
-2. Make a demo-case.
-3. Implement outer loop (MCMC).
-4. Implement inner loop (proximal operator).
+1. Implement outer loop of proximal MCMC.
+2. Implement proximal operator.
+3. Test proximal MCMC on demo problem.
+4. Implement MYULA.
+5. Test MYULA on demo problem.
+6. Implement effective sample size.
+7. Implement R_hat.
