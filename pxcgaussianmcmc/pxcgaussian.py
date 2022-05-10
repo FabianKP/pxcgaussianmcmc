@@ -2,22 +2,11 @@
 import numpy as np
 from typing import Optional
 
-
-class PxcResult:
-    """
-    This is a container for the result of the proximal MCMC run.
-
-    :ivar samples: Of shape (n, d). The MCMC samples. Each row corresponds to a different sample.
-    :ivar r_hat: The value of the R_hat diagnostic. See the mathematical documentation for an explanation.
-    :ivar ess: The effective sample size. See the mathematical documentation for an explanation.
-    """
-    def __int__(self, samples: np.ndarray, r_hat: float, ess: float):
-        self.samples = samples
-        self.r_hat = r_hat
-        self.ess = ess
+from .pxcg_sampler import PxcgSampler
+from .pxc_result import PxcResult
 
 
-def pxcgaussian(warmup: int, num_samples: int, Sigma: np.ndarray, m: np.ndarray, A: Optional[np.ndarray],
+def pxcgaussian(num_warmup: int, num_samples: int, Sigma: np.ndarray, m: np.ndarray, A: Optional[np.ndarray],
                 b: Optional[np.ndarray], lb: Optional[np.ndarray], ub: Optional[np.ndarray]) -> PxcResult:
     """
     Samples from the constrained Gaussian distribution
@@ -25,7 +14,7 @@ def pxcgaussian(warmup: int, num_samples: int, Sigma: np.ndarray, m: np.ndarray,
         truncated to the set
         A @ x = b, C @ x >= d, lb <= x <= ub.
 
-    :param warmup: Number of warmup steps (aka "burnin"). These get thrown away.
+    :param num_warmup: Number of warmup steps (aka "burnin"). These get thrown away.
     :param num_samples: Desired number of samples.
     :param Sigma: Of shape (d, d). Must be a symmetric positive definite matrix.
     :param m: Of shape (d, ).
@@ -37,12 +26,23 @@ def pxcgaussian(warmup: int, num_samples: int, Sigma: np.ndarray, m: np.ndarray,
         above.
     :returns result: An object of type pxcgaussianmcmc.PxcResult.
     """
+    # Check if input makes sense.
 
     # Create PxcSampler object.
+    sampler = PxcgSampler(Sigma=Sigma, m=m, A=A, b=b, lb=lb, ub=ub)
+
+    # Perform warmup.
+    sampler.warmup(num_warmup=num_warmup)
 
     # Sample.
+    sampler.sample(num_samples)
+    samples = sampler.samples
 
     # Run some convergence diagnostics.
+    r_hat = sampler.r_hat
+    ess = sampler.ess
 
     # Create PxcResult object and return it.
+    result = PxcResult(samples=samples, r_hat=r_hat, ess=ess)
+    return result
 
