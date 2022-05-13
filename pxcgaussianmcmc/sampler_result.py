@@ -3,7 +3,7 @@
 import numpy as np
 
 
-class PxcResult:
+class SamplerResult:
     """
     This is a container for the result of the proximal MCMC run.
 

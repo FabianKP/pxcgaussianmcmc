@@ -1,21 +1,16 @@
 
 import numpy as np
-from typing import Optional, Union
+
+from .constrained_gaussian import ConstrainedGaussian
 
 
-class PxcgSampler:
+class Sampler:
     """
     This is the proximal MCMC sampler.
     """
 
-    def __init__(self, Sigma: np.ndarray, m: np.ndarray, A: Optional[np.ndarray],
-                b: Optional[np.ndarray], lb: Optional[np.ndarray], ub: Optional[np.ndarray]):
-        self._Sigma = Sigma
-        self._m = m
-        self._A = A
-        self._b = b
-        self._lb = lb
-        self._ub = ub
+    def __init__(self, constrained_gaussian: ConstrainedGaussian, x_0: np.ndarray, options: dict):
+        self._constrained_gaussian = constrained_gaussian
         # Initialize list in which samples are stored.
         self._sample_list = []
 
@@ -48,7 +43,8 @@ class PxcgSampler:
         """
         Computes the R_hat statistic for the current list of samples. See mathematical documentation for the details.
         """
-        raise NotImplementedError
+        #TODO: Implement (here).
+        return 0.
 
     @property
     def ess(self) -> float:
@@ -56,4 +52,5 @@ class PxcgSampler:
         Computes the effective sample size for the current list of samples. See mathematical documentation for the
         details.
         """
-        raise NotImplementedError
+        #TODO: Implement (here).
+        return 0.
