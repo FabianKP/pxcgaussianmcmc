@@ -10,9 +10,6 @@ For a high-level mathematical documentation, see [here]().
 TODO
 ----
 
-1. Implement ConstrainedGaussian.
-2. Implement find_feasible_point.
-3. Implement proximal operator.
 4. Test proximal MCMC on demo problem.
 5. Implement MYULA.
 6. Test MYULA on demo problem.
