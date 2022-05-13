@@ -6,12 +6,12 @@ from typing import Optional
 class ConstrainedGaussian:
     """
     Container object for the Gaussian distribution with density
-        log p(x) = (x - m).T @ Sigma @ (x - m) + const.,
+        log p(x) = (x - m).T @ P @ (x - m) + const.,
         truncated to the set
         A @ x = b, C @ x <= d, lb <= x <= ub.
     """
     dim: int    # Dimension of x.
-    Sigma: np.ndarray
+    P: np.ndarray
     m: np.ndarray
     A: np.ndarray
     b: np.ndarray
@@ -20,13 +20,13 @@ class ConstrainedGaussian:
     lb: np.ndarray
     ub: np.ndarray
 
-    def __init__(self, Sigma: np.ndarray, m: np.ndarray, A: Optional[np.ndarray] = None, b: Optional[np.ndarray] = None,
+    def __init__(self, P: np.ndarray, m: np.ndarray, A: Optional[np.ndarray] = None, b: Optional[np.ndarray] = None,
                  C: Optional[np.ndarray] = None, d: Optional[np.ndarray] = None, lb: Optional[np.ndarray] = None,
                  ub: Optional[np.ndarray] = None):
         # Check that input is consistent.
-        assert Sigma.ndim == 2, "Sigma must be a matrix."
-        dim = Sigma.shape[0]
-        assert Sigma.shape == (dim, dim), "Sigma must be square."
+        assert P.ndim == 2, "Sigma must be a matrix."
+        dim = P.shape[0]
+        assert P.shape == (dim, dim), "Sigma must be square."
         assert m.shape == (dim, ), "Shape of m does not match Sigma."
         for mat, vec, str1, str2 in zip([A, C], [b, d], ["A", "C"], ["b", "d"]):
             assert (mat is None and vec is None) or (mat is not None and vec is not None), \
@@ -54,7 +54,7 @@ class ConstrainedGaussian:
 
         # Load them into instance variables.
         self.dim = dim
-        self.Sigma = Sigma
+        self.P = P
         self.m = m
         self.A = A
         self.b = b
@@ -68,7 +68,7 @@ class ConstrainedGaussian:
         Returns value of log-probability density function at vector x (up to additive constant). That is, it returns
             log p(x) = (x - m).T @ Sigma @ (x - m).
         """
-        return 0.5 * (x - self.m).T @ self.Sigma @ (x - self.m)
+        return 0.5 * (x - self.m).T @ self.P @ (x - self.m)
 
     def satisfies_constraints(self, x: np.ndarray, tol: float) -> bool:
         """
@@ -77,11 +77,11 @@ class ConstrainedGaussian:
         e = max(Ax - b) + max(positive(d - Cx)) + max(positive(x - ub)) + max(positive(lb - x))
         is computed. Returns True if e <= tol, and False if e > tol.
         """
-        equality_error = np.max(self.A @ x - self.b)
+        equality_error = np.max(self.A @ x - self.b, initial=0.)
         # Evaluate np.max with initial=0. so that in the case of an empty array it returns 0.
         inequality_error = np.max((self.d - self.C @ x).clip(min=0.), initial=0.)
-        upper_bound_error = np.max((x - self.ub).clip(min=0.), initial=0.)
-        lower_bound_error = np.max((self.lb - x).clip(min=0.), initial=0.)
+        upper_bound_error = np.max((x - self.ub).clip(min=0.))
+        lower_bound_error = np.max((self.lb - x).clip(min=0.))
         constraint_error = equality_error + inequality_error + upper_bound_error + lower_bound_error
 
         satisfied = (constraint_error <= tol)

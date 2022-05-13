@@ -19,18 +19,18 @@ class ProximalOperator:
     def evaluate(self, x: np.ndarray, delta: float) -> np.ndarray:
         """
         Returns the minimizer xi of the proximal optimization problem
-            min_z (xi - m).T @ Sigma @ (xi - m) + (1/delta) * ||xi - x||^2
+            min_z (xi - m).T @ P @ (xi - m) + (1/delta) * ||xi - x||^2
             s.t. A xi = b, C xi >= d, l <= xi <= u.
         :param x:
         :param delta:
         :return: xi
         """
         # Since qp_solver solves problems of the form 0.5 x.T @ P @ x + q @ x, we need to out-multiply:
-        #   (xi - m).T @ Sigma @ (xi - m) + (1/delta) * (xi - x).T (xi - x) =
-        # = 0.5 xi.T @ 2 * (Sigma + I / delta) @ xi - 2 * (Sigma.T @ m + x / delta).T @ xi + const.
+        #   (xi - m).T @ P @ (xi - m) + (1/delta) * (xi - x).T (xi - x) =
+        # = 0.5 xi.T @ 2 * (P + I / delta) @ xi - 2 * (P.T @ m + x / delta).T @ xi + const.
         # Solve problem using qpsolvers.
-        P = 2 * (self._con_gau.Sigma + np.identity(self._dim) / delta)
-        q = - 2 * (self._con_gau.Sigma.T @ self._con_gau.m + x / delta)
+        P = 2 * (self._con_gau.P + np.identity(self._dim) / delta) # Careful: Clash of notations (P and P).
+        q = - 2 * (self._con_gau.P.T @ self._con_gau.m + x / delta)
         xi = qpsolvers.solve_qp(P=P,
                                 q=q,
                                 G=empty_to_none(self._con_gau.C),
@@ -39,6 +39,9 @@ class ProximalOperator:
                                 b=empty_to_none(self._con_gau.b),
                                 lb=self._con_gau.lb,
                                 ub=self._con_gau.ub)
+        # Check that xi satisfies constraints.
+        if not self._con_gau.satisfies_constraints(xi, tol=1e-5):
+            print("WARNING: Constraint violated.")
         return xi
 
 

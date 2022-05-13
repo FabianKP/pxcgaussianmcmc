@@ -126,12 +126,12 @@ p(\*x) \propto \exp \left( - \frac{1}{2} (L x - y)^\top R^{-1} (Lx - y) - \frac{
 where $L: \R^d \to \R^m$ is some sort of observation matrix, $P \in \R^{d \times d}$ and $R \in \R^{m \times m}$ are the covariance matrices of the prior and likelihood, and $\indicator{\mathcal C}$ is as above. This distribution can be brought in the form \eqref{eq:pdf_basic_form} using the following identities:
 \begin{align}
 \* \Sigma^{-1} &= P^{-1} + L^\top R^{-1} L, \label{eq:sigma_formula} \\
-\* m &= z + \Sigma^{-1} L^\top R^{-1} (y - L z). \label{eq:m_formula}
+\* m &= z + \Sigma L^\top R^{-1} (y - L z). \label{eq:m_formula}
 \end{align}
 If you don't want the prior term in \eqref{eq:pdf_likelihood_form} (i.e. the term with $P^{-1}$), the corresponding formulas are
 \begin{align*}
 \* \Sigma^{-1} & = (L^\top R^{-1} L)^{-1}, \\
-\* m & = \Sigma^{-1} L^\top R^{-1} y.
+\* m & = \Sigma L^\top R^{-1} y.
 \end{align*}
 
 
@@ -269,9 +269,11 @@ Note that for the evaluation of the Hastings ratio, it is easier to work with lo
 \begin{align*}
 r = \min \left( 1, \frac{p(\bm y) q(\bm x | \bm y)}{p(\bm x) q(\bm y | \bm x)} \right),
 \end{align*}
-it is better to compute (using \eqref{eq:pxmala_log_proposal})
+it is better to compute (using \eqref{eq:pxmala_log_proposal}, and noting that the normalization constants cancel out)
 \begin{align*}
-s = h(\bm x) - h(\bm y) + \frac{1}{4 \delta}\norm{\bm x - \prox{f}{\delta}(\bm y)}_2^2 - \frac{1}{4 \delta}\norm{\bm y - \prox{f}{\delta}(\bm x)}_2^2
+s & := \log \left(\frac{p(\bm y) q(\bm x | \bm y)}{p(\bm x) q(\bm y | \bm x)} \right) \\
+& = \log p(\bm y) - \log p(\bm x) + \log q(\bm x | \bm y) - \log q(\bm y | \bm x) \\
+& = - h(\bm y) + h(\bm x) - \frac{1}{4 \delta}\norm{\bm x - \prox{f}{\delta}(\bm y)}_2^2 + \frac{1}{4 \delta}\norm{\bm y - \prox{f}{\delta}(\bm x)}_2^2
 \end{align*}
 and then to set $r = \min(1, e^s)$.
 
@@ -289,9 +291,12 @@ Given a feasible point $\bm x_0 \in \R^d$, $\delta > 0$, and sample size $N \in 
 and store the minimizer as $\bm \xi$;
 \State Sample $\bm z \sim \normal(0, \Idmat_d)$;
 \State Set $\bm y \gets \bm \xi + \sqrt{2 \delta} \bm z$;
+\If{$y$ violates a constraint}
+\State $\bm x_{n+1} \gets \bm x$;
+\Else
 \State Solve
 \begin{align*}
-\min_{\bm \zeta} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \zeta - \bm m)}_2^2 + \frac{1}{\delta} \norm{\bm \zeta - \bm y_{n+1}}_2^2 \rbrace \\
+\min_{\bm \zeta} & \quad \lbrace \norm{\bm \Sigma^{-1/2}(\bm \zeta - \bm m)}_2^2 + \frac{1}{\delta} \norm{\bm \zeta - \bm y}_2^2 \rbrace \\
 \text{s. t.} & \quad \bm A \bm \zeta = \bm b, \quad \bm C \bm \zeta \geq \bm d, \quad \bm l \leq \bm \zeta \leq \bm u,
 \end{align*}
 and store the minimizer as $\bm \zeta$;
@@ -299,13 +304,14 @@ and store the minimizer as $\bm \zeta$;
 \State $\tilde h = \frac{1}{2} \norm{\bm \Sigma^{-1/2}(\bm y - \bm m)}_2^2$;
 \State $q \gets \frac{1}{4 \delta}\norm{\bm x - \bm \xi}_2^2$;
 \State $\tilde q \gets \frac{1}{4 \delta}\norm{\bm y - \bm \zeta}_2^2$;
-\State $s \gets h - \tilde h + q - \tilde q$;
+\State $s \gets - \tilde h + h - \tilde q + q$;
 \State $r \gets \min(1, e^s)$;
 \State Sample $\eta \sim \mathrm{U}([0,1])$;
 \If{$r \geq \eta$}
 \State $\bm x_{n+1} \gets \bm y$;
 \Else
 \State $\bm x_{n+1} \gets \bm x$;
+\EndIf
 \EndIf
 \EndFor
 \State return $\bm x_1, \ldots, \bm x_N$;

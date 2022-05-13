@@ -9,7 +9,7 @@ def test_init():
     Sigma = np.identity(dim)
     m = np.zeros(dim)
     lb = np.zeros(dim)
-    congau = ConstrainedGaussian(Sigma=Sigma, m=m, lb=lb)
+    congau = ConstrainedGaussian(P=Sigma, m=m, lb=lb)
     proxy = ProximalOperator(constrained_gaussian=congau)
 
 
@@ -23,7 +23,7 @@ def test_unconstrained():
     Sigma = L @ L.T
     m = np.random.randn(dim)
     delta = 0.123
-    congau = ConstrainedGaussian(Sigma=Sigma, m=m)
+    congau = ConstrainedGaussian(P=Sigma, m=m)
     proxy = ProximalOperator(constrained_gaussian=congau)
 
     x = np.random.randn(dim)

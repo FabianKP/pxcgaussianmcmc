@@ -11,7 +11,7 @@ def two_dimensional_example():
     """
     Creates two-dimensional test problem.
 
-    :return: x_map, x_true, a, b, lb, gamma
+    :return: x_map, x_true, a, b, lb
     """
     # Prior model.
     x_bar = np.array([0., 0.])
@@ -38,4 +38,4 @@ def two_dimensional_example():
 
     
 
-    return x_map, x_true, a, b
+    return x_map, x_true, a, b, lb

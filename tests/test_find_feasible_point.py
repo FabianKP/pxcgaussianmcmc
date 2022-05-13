@@ -13,7 +13,7 @@ def test_find_feasible_point():
     lb = np.zeros(8)
     Sigma = np.identity(dim)
     m = np.zeros(dim)
-    congau = ConstrainedGaussian(Sigma=Sigma, m=m, A=a, b=b, lb=lb)
+    congau = ConstrainedGaussian(P=Sigma, m=m, A=a, b=b, lb=lb)
 
     x_feasible = find_feasible_point(constrained_gaussian=congau)
     assert congau.satisfies_constraints(x=x_feasible, tol=1e-15)

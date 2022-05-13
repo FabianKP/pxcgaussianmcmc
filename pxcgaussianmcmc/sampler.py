@@ -13,6 +13,7 @@ class Sampler:
         self._constrained_gaussian = constrained_gaussian
         # Initialize list in which samples are stored.
         self._sample_list = []
+        self._acceptance_counter = 0
 
     @property
     def samples(self) -> np.ndarray:
@@ -54,3 +55,11 @@ class Sampler:
         """
         #TODO: Implement (here).
         return 0.
+
+    @property
+    def acceptance_ratio(self) -> float:
+        """
+        Returns the acceptance ratio.
+        """
+        acceptance_ratio = self._acceptance_counter / len(self._sample_list)
+        return acceptance_ratio
