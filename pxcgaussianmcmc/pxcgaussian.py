@@ -15,7 +15,7 @@ def pxcgaussian(SamplerType: Type[Sampler], num_warmup: int, num_samples: int, S
     Samples from the constrained Gaussian distribution
         log p(x) = 0.5 * (L x - b).T @ Gamma @ (Lx - b) + (x - m).T @ Sigma @ (x - m) + const.,
         truncated to the set
-        A @ x = b, C @ x >= d, lb <= x <= ub.
+        A @ x = b, C @ x <= d, lb <= x <= ub.
 
     :param Sampler: An Sampler object. Possible samplers are:
         - PxMCMC: Proximal MCMC.
