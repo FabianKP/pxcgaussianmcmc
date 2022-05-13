@@ -10,10 +10,11 @@ For a high-level mathematical documentation, see [here]().
 TODO
 ----
 
-1. Implement outer loop of proximal MCMC.
-2. Implement proximal operator.
-3. Test proximal MCMC on demo problem.
-4. Implement MYULA.
-5. Test MYULA on demo problem.
-6. Implement effective sample size.
-7. Implement R_hat.
+1. Implement ConstrainedGaussian.
+2. Implement find_feasible_point.
+3. Implement proximal operator.
+4. Test proximal MCMC on demo problem.
+5. Implement MYULA.
+6. Test MYULA on demo problem.
+7. Implement effective sample size.
+8. Implement R_hat.
