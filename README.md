@@ -12,7 +12,7 @@ TODO
 
 4. Test proximal MCMC on demo problem.
    1. There is a big bug in PxMALA (even in mathematical documentation): y does not neccesarily satisfy constraints?!
-5. Implement MYULA.
-6. Test MYULA on demo problem.
+5. Implement MYMALA.
+6. Test MYMALA on demo problem.
 7. Implement effective sample size.
 8. Implement R_hat.

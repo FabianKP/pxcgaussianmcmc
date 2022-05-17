@@ -179,7 +179,7 @@ That is, given $\bm x \in \R^d$, we can generate a new proposal $\bm y$ by sampl
 \bm y = \prox{f}{\delta}(\bm x) + \sqrt{2 \delta} \bm z.
 \end{align*}
 
-\subsubsection{MYULA}
+\subsubsection{MYMALA}
 
 Alternatively, let
 \begin{align*}
@@ -188,9 +188,16 @@ f(\bm x) = h(\bm x) + g(\bm x),
 where we assume that $h$ is twice continuously differentiable. Let $\lambda > 0$ and $(\delta_n)_{n=1}^\infty$ be a nonincreasing sequence of positive stepsizes. We define the so-called \emph{Moreau-Yosida Unadjusted Langevin Algorithm} (MYULA) by the iteration
 \begin{align*}
 & z_{n+1} \sim \normal(0, \Idmat), \\
-& x_{n+1} = x_n - \delta_{n+1} \left(\nabla h(x_n) + \lambda^{-1}(x_n - \prox{g}{\lambda}(x_n) \right) + \sqrt{2 \delta_{n+1}} z_{n+1}, \\
+& x_{n+1} = x_n - \delta_{n+1} \left[ \nabla h(x_n) + \lambda^{-1}( x_n - \prox{g}{\lambda}(x_n)) \right] + \sqrt{2 \delta_{n+1}} z_{n+1}. \\
 \end{align*}
-An important caveat for the samples obtained from MYULA is that they represent a smoothed distribution
+It is known that MYULA creates biased samples. Furthermore, due to the added noise there is no guarantee that the individual samples satisfy the constraints. As a remedy, the MYULA method can be embedded into a Metropolis-Hastings scheme. That is, we use the general scheme outlined above, but with the non-stationary proposal distribution
+\begin{align}
+q_n(\*y | \*x_n) = \normal(\*x_n - \delta_{n+1}\left[ \nabla h(\*x_n) + \lambda^{-1} ( \*x_n - \prox{g}{\lambda}(\*x_n) )\right], 2 \delta_{n+1} \Idmat_d). \label{eq:mymala_proposal}
+\end{align}
+The resulting algorithm is called MYMALA, for "Moreau-Yosida Metropolis-adjusted Langevin Algorithm".
+
+
+An important caveat for the samples obtained from MYMALA is that they represent a smoothed distribution
 \begin{align*}
 p_\lambda(\bm x) = \frac{1}{Z} e^{-h(\bm x) + g_\lambda(\bm x)}.
 \end{align*}
@@ -214,7 +221,7 @@ where
 
 \subsection{Specialization to constrained Gaussians}
 
-\subsubsection{Px-MALA}
+\subsubsection{PxMALA}
 
 In our particular case, we have
 \begin{align*}
@@ -226,16 +233,16 @@ In order to evaluate the proximal operator $\prox{f}{\lambda}$, one has to solve
 \end{align*}
 This problem can be solved fast using any method for quadratic optimization.
 
-\subsubsection{MYULA}
+\subsubsection{MYMALA}
 
-For MYULA, we use the following splitting:
+For MYMALA, we use the following splitting:
 \begin{align*}
 & f(\bm x) = h(\bm x) + g(\bm x), \\
 & h(\bm x) = \frac{1}{2} (\bm x - \bm m)^\top \bm \Sigma^{-1} (\bm x - \bm m), \\
 & g(\bm x) = \chi_{\mathcal C}(\bm x), \\
 & \mathcal C = \Set{\bm x \in \R^d}{\bm A \bm x = \bm b, \bm C \bm x \geq \bm d, \bm l \leq \bm x \leq \bm u}.
 \end{align*}
-Performing a MYULA-step thus requires evaluation of
+Performing a MYMALA-step thus requires evaluation of
 \begin{align*}
 \nabla h(\bm x) = \Sigma^{-1}(\bm x - \bm m)
 \end{align*}
@@ -247,19 +254,19 @@ and
 
 \subsection{Choosing the hyper-parameters}
 
-Finally, let us provide some guidelines on how to choose the hyperparameters for Px-MALA and MYULA:
+Finally, let us provide some guidelines on how to choose the hyperparameters for Px-MALA and MYMALA:
 
 \subsubsection*{Px-MALA}
 
 The stepsize parameter $\delta$ should usually be small. A common rule-of-thumb is that one should choose $\delta$ such that the acceptance frequency is around $0.5$. Our implementation provides an option to automatically adapt $\delta$ during burnin to achieve a prescribed acceptance frequency.
 
-\subsubsection*{MYULA}
+\subsubsection*{MYMALA}
 
 The sequence of stepsizes $(\gamma_n)_{n=1}^\infty$ should be nonincreasing and satisfy $\gamma_n < \frac{2}{\mathrm{Lip}(h) + 1/\lambda}$ for all $n \in \N$, where $\mathrm{Lip}(h)$ is the Lipschitz constant of $\nabla h$. If $\mathrm{Lip}(h)$ is not known, $\gamma$ has to be tuned by hand. Since in any case $\mathrm{Lip}(h) \geq 0$, we now that $\gamma$ and $\lambda$ in any case have to satisfy the relation $\gamma \leq 2 \lambda$. Hence, in absence of further information, $\gamma = \lambda$ can be used as a default choice.
 
 \subsection{Pseudocode}
 
-\subsubsection*{Px-MALA}
+\subsubsection*{PxMALA}
 
 Note that the proposal kernel for Px-MALA satisfies
 \begin{align}
@@ -319,22 +326,45 @@ and store the minimizer as $\bm \zeta$;
 \end{algorithm}
 
 
-\subsubsection*{MYULA}
+\subsubsection*{MYMALA}
+
+For MYMALA, the proposal distribution is \eqref{eq:mymala_proposal} the Hastings ratio can be computed by
+\begin{align*}
+s_n & = \log p(\*y) - \log p(\*x) + \log q_n(\*x_n | \*y) - \log q_n(\*y | \*x_n) \\
+& = -h(\*y) + h(\*x_n) - \frac{1}{4 \delta_{n+1}} \norm{x_n - \hat y_n}_2^2 + \frac{1}{4 \delta_{n+1}} \norm{y - \hat x_n}_2^2, \\ \text{where} \quad \hat x_n & = x_n - \delta_{n+1} \left[\Sigma^{-1}(x_n - m) + \lambda^{-1}(x_n - \prox{g}{\lambda}(x_n)) \right]\\
+\text{and} \quad \hat y_n & = y_n - \delta_{n+1} \left[\Sigma^{-1}(y_n - m) + \lambda^{-1}(y_n - \prox{g}{\lambda}(y_n)) \right].
+\end{align*}
 
 \begin{algorithm}[H]
-\caption{\texttt{MYULA}}
+\caption{\texttt{MYMALA}}
 Given a feasible point $\bm x_0 \in \R^d$, sample size $N \in \N$, $\lambda > 0$, and a nonincreasing sequence $(\delta_n)_{n=1}^N > 0$;
-\begin{algorithmic}[2]\label{alg:myula}
+\begin{algorithmic}[2]\label{alg:mymala}
 \For{$n=0, 1,2,\ldots, N$}
 \State $\bm x \gets \bm x_n$;
-\State Solve
-\begin{align*}
-\min_{\bm y} \quad & \norm{\bm y - \bm x}_2^2 \\
-\text{s. t.} \quad & \bm A \bm y = \bm b, \quad \bm C \bm y \geq \bm d, \quad \bm \ell \leq \bm y \leq \bm u.
-\end{align*}
-\State $\bm u \gets \bm \Sigma^{-1}(\bm x - \bm m)$;
+\State $\*u \gets \prox{g}{\lambda}(\*x)$;
+\State $\*v \gets \* \Sigma^{-1}(\*x - \*m)$;
+\State $\hat{\*x} \gets \bm x - \delta_{n+1} (\*v - \lambda^{-1}(\bm x - \bm u))$;
 \State $\bm z \gets \normal(\bm 0, \Idmat_d)$;
-\State $\bm x_{n+1} \gets \bm x - \delta_{n+1} (\bm y - \lambda^{-1}(\bm x - \bm u) + \sqrt{2 \delta_{n+1}} \bm z$;
+\State $\bm y \gets \hat{\*x} + \sqrt{2 \delta_{n+1}} \bm z$;
+\If{$\*y$ violates a constraint}
+\State $\*x_{n+1} \gets \* x$
+\Else
+\State $\hat{\* u} \gets \prox{g}{\lambda}(\*y)$
+\State $\hat{\* v} \gets \* \Sigma^{-1}(\*y - \*m)$;
+\State $\hat{\* y} \gets \*y - \delta_{n+1} (\hat{\*v} - \lambda^{-1}(\*y - \hat{\* u}))$;
+\State $h \gets \frac{1}{2}\norm{\Sigma^{-1/2}(x-m)}$;
+\State $\tilde h \gets \frac{1}{2} \norm{\Sigma^{-1/2}(y-m)}$;
+\State $q \gets \frac{1}{4 \delta_{n+1}} \norm{\*x - \hat y}_2^2$;
+\State $\tilde q \gets \frac{1}{4 \delta_{n+1}} \norm{\*y - \hat x}_2^2$
+\State $s \gets - \tilde h + h - \tilde q + q$;
+\State $r \gets \min(1, e^s)$;
+\State Sample $\eta \sim U([0,1])$;
+\If{$r \geq \eta$}
+\State $\*x_{n+1} \gets \*y$;
+\Else
+\State $\*x_{n+1} \gets \*x$;
+\EndIf
+\EndIf
 \EndFor
 \State return $\bm x_1, \ldots, \bm x_N$;
 \end{algorithmic}
