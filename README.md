@@ -10,9 +10,9 @@ For a high-level mathematical documentation, see [here]().
 TODO
 ----
 
-4. Test proximal MCMC on demo problem.
-   1. There is a big bug in PxMALA (even in mathematical documentation): y does not neccesarily satisfy constraints?!
-5. Implement MYMALA.
-6. Test MYMALA on demo problem.
-7. Implement effective sample size.
-8. Implement R_hat.
+5. 
+6. Finish implementation of MYMALA.
+7. Test MYMALA on demo problem.
+8. Implement effective sample size.
+9. Implement R_hat.
+10. Implement autotune: Automatically adapt delta during warmup in order to achieve a 50% acceptance ratio.
