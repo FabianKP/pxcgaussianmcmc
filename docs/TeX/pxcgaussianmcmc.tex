@@ -262,7 +262,12 @@ The stepsize parameter $\delta$ should usually be small. A common rule-of-thumb 
 
 \subsubsection*{MYMALA}
 
-The sequence of stepsizes $(\gamma_n)_{n=1}^\infty$ should be nonincreasing and satisfy $\gamma_n < \frac{2}{\mathrm{Lip}(h) + 1/\lambda}$ for all $n \in \N$, where $\mathrm{Lip}(h)$ is the Lipschitz constant of $\nabla h$. If $\mathrm{Lip}(h)$ is not known, $\gamma$ has to be tuned by hand. Since in any case $\mathrm{Lip}(h) \geq 0$, we now that $\gamma$ and $\lambda$ in any case have to satisfy the relation $\gamma \leq 2 \lambda$. Hence, in absence of further information, $\gamma = \lambda$ can be used as a default choice.
+Since $\lambda$ is a regularization parameter, we want to choose it small enough that the approximation error is not too large. On the other hand, we want to choose the stepsizes $\delta_n$ large in order to quickly explore the parameter spae. From the theory of MALA, we know that the sequence of stepsizes $(\delta_n)_{n=1}^\infty$ should be nonincreasing and satisfy $\delta_n < \frac{2}{\mathrm{Lip}(h) + 1/\lambda}$ for all $n \in \N$, where $\mathrm{Lip}(h)$ is the Lipschitz constant of $\nabla h$. Hence, one has to balance between the approximation error and the stepsizes.
+
+Since in our case, $\nabla h = \*\Sigma^{-1}(\*x - \*m)$, we have $\mathrm{Lip}(h) = \norm{\*\Sigma^{-1}}_2$, and therefore, a default choice for $(\delta_n)$ might be the constant sequence
+\begin{align*}
+\delta_n = \frac{2}{\norm{\* \Sigma^{-1}}_2 + \frac{1}{\lambda}}.
+\end{align*}
 
 \subsection{Pseudocode}
 
@@ -352,8 +357,8 @@ Given a feasible point $\bm x_0 \in \R^d$, sample size $N \in \N$, $\lambda > 0$
 \State $\hat{\* u} \gets \prox{g}{\lambda}(\*y)$
 \State $\hat{\* v} \gets \* \Sigma^{-1}(\*y - \*m)$;
 \State $\hat{\* y} \gets \*y - \delta_{n+1} (\hat{\*v} - \lambda^{-1}(\*y - \hat{\* u}))$;
-\State $h \gets \frac{1}{2}\norm{\Sigma^{-1/2}(x-m)}$;
-\State $\tilde h \gets \frac{1}{2} \norm{\Sigma^{-1/2}(y-m)}$;
+\State $h \gets \frac{1}{2}\norm{\Sigma^{-1/2}(x-m)}_2^2$;
+\State $\tilde h \gets \frac{1}{2} \norm{\Sigma^{-1/2}(y-m)}_2^2$;
 \State $q \gets \frac{1}{4 \delta_{n+1}} \norm{\*x - \hat y}_2^2$;
 \State $\tilde q \gets \frac{1}{4 \delta_{n+1}} \norm{\*y - \hat x}_2^2$
 \State $s \gets - \tilde h + h - \tilde q + q$;
@@ -395,7 +400,6 @@ be the sample average and
 \*\Sigma = \frac{1}{M} \sum_{m=1}^M \* \Sigma_m
 \end{align*}
 be the sample covariance of all chains.
-
 
 
 

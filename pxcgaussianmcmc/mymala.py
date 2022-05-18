@@ -4,7 +4,7 @@ import numpy as np
 from typing import List
 
 from .constrained_gaussian import ConstrainedGaussian
-from .proximal_operator import ProximalOperator
+from .ldp_proximal import LDPProximal
 from .sampler import Sampler
 
 
@@ -16,15 +16,18 @@ class MYMALA(Sampler):
         """
 
         :param constrained_gaussian:
-        :param x_0:
+        :param x_0: A point that satisfies all constraints.
         :param options: Additional sampler options.
             - lambda: The value for the regularization parameter lambda.
             - delta: The value for the stepsizes. Can either be a callable (that takes n as input) or a float.
         """
         assert constrained_gaussian.satisfies_constraints(x_0, tol=EPS)
         # Read in options.
-        delta = options.setdefault("delta", 1.)
-        lam = options.setdefault("lambda", delta)
+        lam = options.setdefault("lambda", 1.)
+        p_norm = np.linalg.norm(constrained_gaussian.P, ord=2)
+        default_delta = 2 / (p_norm + 1./lam)
+        delta = options.setdefault("delta", default_delta)
+        print(f"delta = {delta}.")
         assert lam > 0.
         self.lam = lam
         self._dim = constrained_gaussian.dim
@@ -39,20 +42,20 @@ class MYMALA(Sampler):
         Sampler.__init__(self, constrained_gaussian=constrained_gaussian, x_0=x_0, options=options)
         self._x_start = x_0
         # Initialize proximal operator.
-        raise NotImplementedError("WARNING: For MYMALA, I have to use a different proximal operator (no Sigma-term),"
-                                  "since I perform splitting.")
-        self._prox = ProximalOperator(constrained_gaussian=constrained_gaussian)
+        self._prox = LDPProximal(constrained_gaussian=constrained_gaussian)
         self._congau = constrained_gaussian
         self._P = constrained_gaussian.P
         self._m = constrained_gaussian.m
         self._acceptance_counter = 0
 
     def warmup(self, num_warmup: int):
+        print(f"Warmup...")
         warmup_samples = self._iterate(n=num_warmup)
         self._x_start = warmup_samples[-1]
 
     def sample(self, num_samples: int):
-        self._samples = self._iterate(n=num_samples)
+        print(f"Sampling...")
+        self._sample_list = self._iterate(n=num_samples)
 
     def delta(self, n: int) -> float:
         if self._delta_const is None:
@@ -69,6 +72,8 @@ class MYMALA(Sampler):
         x = self._x_start
         iterates = []
         for i in range(1, n+1):
+            print("\r", end="")
+            print(f"Sampling: {i}/{n}.", end=" ")
             u = self._prox.evaluate(x, self.lam)
             v = self._P @ (x - self._m)
             delta_i = self.delta(i)

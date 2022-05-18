@@ -3,7 +3,7 @@ from math import exp, sqrt
 import numpy as np
 
 from .constrained_gaussian import ConstrainedGaussian
-from .proximal_operator import ProximalOperator
+from .cls_proximal import CLSProximal
 from .sampler import Sampler
 
 
@@ -30,7 +30,7 @@ class PxMALA(Sampler):
         Sampler.__init__(self, constrained_gaussian=constrained_gaussian, x_0=x_0, options=options)
         self._x_start = x_0
         # Initialize proximal operator.
-        self._prox = ProximalOperator(constrained_gaussian=constrained_gaussian)
+        self._prox = CLSProximal(constrained_gaussian=constrained_gaussian)
         self._congau = constrained_gaussian
         self._P = constrained_gaussian.P
         self._m = constrained_gaussian.m
