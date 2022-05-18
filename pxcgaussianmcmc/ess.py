@@ -10,4 +10,12 @@ def ess(samples: np.ndarray) -> float:
     :param samples: Of shape (n, d).
     :return: The effective sample size.
     """
-    
+    # Compute sample covariance of all chains combined.
+    # Combine multivariate replicated lugsail batch means estimator:
+    #   For batch size b and b / 3:
+    #       Separate chain into batches.
+    #       Compute batch means.
+    #       Compute T_b.
+    #   Compute T_L
+    # Evaluate ESS.
+
