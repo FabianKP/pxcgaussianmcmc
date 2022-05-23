@@ -416,7 +416,7 @@ The effective sample size can be estimated by
 where
 \begin{itemize}
 \item $\* \Sigma$ is the sample covariance matrix of all chains as described above;
-\item $\hat{\* T}_L$ is the so-called \emph{multivariate replicated lugsail batch means estimator} for the Monte Carlo standard error. Given a batch size $b < N$, let $a = \lfloor b \cdot N \rfloor$ denote the number of batches. For $i = 1,\ldots, a$, let
+\item $\hat{\* T}_L$ is the so-called \emph{multivariate replicated lugsail batch means estimator} for the Monte Carlo standard error. Given a batch size $b < N$, let $a = \lfloor b \cdot N \rfloor$ denote the number of batches. Typically, the batch size must increase with $N$, and default choices are $b = \lfloor N^{1/3} \rfloor$ or $b = \lfloor N^{1/2} \rfloor$. For $i = 1,\ldots, a$, let
 \begin{align*}
 \hat{\bm x}_i^{(m)} = \frac{1}{b} \sum_{j=1}^b \bm x_{(i-1)b + j}^{(m)}
 \end{align*}
