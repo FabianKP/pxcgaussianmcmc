@@ -34,3 +34,12 @@ def test_w_value():
 
     print(f"W({d},{alpha},{eps}) = {w}.")
 
+
+def test_w_large():
+    alpha = 0.01
+    eps = 0.1
+    d = 636
+    w = w_value(d, alpha, eps)
+
+    print(f"W({d},{alpha},{eps}) = {w}.")
+

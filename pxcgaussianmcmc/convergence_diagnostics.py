@@ -1,5 +1,5 @@
 
-from math import sqrt, pi, pow
+from math import exp, sqrt, pi, pow
 import numpy as np
 from typing import Optional
 from scipy.stats import chi2
@@ -67,6 +67,9 @@ def w_value(d: int, alpha: float, epsilon: float):
     """
     Computes W(alpha, epsilon, d) (see mathematical documentation).
 
+    Since there is a Gamma function present, we have to use Stirlings approximation for larger values of d (d >= 20):
+    Gamma(z) >= sqrt(2 pi / z) * (z / e)^z.
+
     :param alpha:
     :param epsilon:
     :param d:
@@ -78,10 +81,15 @@ def w_value(d: int, alpha: float, epsilon: float):
     assert d >= 1
     # Compute W(d, alpha, epsilon)
     chi2_alpha_d = chi2.ppf(q=1 - alpha, df=d)
-    gamma_d_half = gamma(d / 2)
-    numerator = pow(2, (2 / d)) * pi * chi2_alpha_d
-    denominator = pow(d * gamma_d_half, 2 / d) * epsilon * epsilon
-    w = numerator / denominator
+    alpha_epsilon_factor = chi2_alpha_d / (epsilon * epsilon)
+    if d <= 20:
+        gamma_d_half = gamma(d / 2)
+        denominator = pow(d * gamma_d_half, 2 / d)
+        d_factor = pow(2, (2 / d)) * pi / denominator
+    else:
+        d_factor = exp(1) * pow(2, 2 / d) / (2 * d)
+
+    w = d_factor * alpha_epsilon_factor
 
     assert w > 0
     return w
