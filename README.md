@@ -10,6 +10,6 @@ For a high-level mathematical documentation, see [here]().
 TODO
 ----
 
-9. Implement R_hat.
 10. Implement w_value.
-11. Implement autotune: Automatically adapt delta during warmup in order to achieve a 50% acceptance ratio.
+11. Implement automatic choice of sample size (using w-criterion).
+12. Implement autotune: Automatically adapt delta during warmup in order to achieve a 50% acceptance ratio.

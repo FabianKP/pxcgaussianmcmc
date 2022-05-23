@@ -443,7 +443,7 @@ W(d, \alpha, \epsilon) = \frac{2^{2/d} \pi \chi^2_{1-\alpha,d}}{(d \Gamma(d/2))^
 where
 \begin{itemize}
 \item $d$ is the dimension of the parameter space.
-\item $\alpha$ is the desired confidence level (e.g. $\alpha=0.05$ for 95\%-confidence.
+\item $\alpha$ is the desired confidence level (e.g. $\alpha=0.05$ for 95\%-confidence).
 \item $\epsilon$ is the desired relative precision. That is, a value of $\epsilon=0.1$ means that approximately 10\% of the variability in the samples come from the Monte Carlo error.
 \item $\chi^2_{1-\alpha, d}$ is the $(1-\alpha)$-percentile of the chi-squared distribution with $d$ degrees of freedom.
 \item $\Gamma$ is the gamma function, $\Gamma(z) = \int_0^\infty x^{z-1} e^{-x} \d x$.
@@ -459,7 +459,7 @@ We implement the stabilized, multivariate version of $\hat R$ described in \cite
 
 In \cite{VatKnu21}, the multivariate stabilized $\hat R$ statistic is defined as
 \begin{align*}
-\hat R^d_L = \sqrt{ \frac{N-1}{N} + \frac{\det(\*\Sigma^{-1} \hat{\* T}_L)^{1/d}}{N} },
+\hat R^d_L = \sqrt{ \frac{N-1}{N} + \frac{\det(\*\Sigma^{-1} \hat{\* T}_L)^{1/d}}{N} } = \sqrt{ \frac{N-1}{N} + \frac{M}{\widehat{\mathrm{ESS}}}},
 \end{align*}
 where $\*\Sigma$ and $\hat{\*T}_L$ are as above.
 
