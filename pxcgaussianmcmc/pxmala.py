@@ -1,6 +1,7 @@
 
 from math import exp, sqrt
 import numpy as np
+from typing import Optional
 
 from .constrained_gaussian import ConstrainedGaussian
 from .cls_proximal import CLSProximal
@@ -12,23 +13,18 @@ EPS = 1e-15
 
 class PxMALA(Sampler):
 
-    def __init__(self, constrained_gaussian: ConstrainedGaussian, x_0: np.ndarray, options: dict):
+    def __init__(self, constrained_gaussian: ConstrainedGaussian, x_start: Optional[np.ndarray] = None,
+                 delta: Optional[float] = 1.):
         """
-        :param constrained_gaussian: Container for the constrained Gaussian distribution.
-        :param x_0: A feasible point.
-        :param options: Dictionary with further sampler options.
+        :param constrained_gaussian: An object of type pxcgaussianmcmc.ConstrainedGaussian, containing all the
+            information about the target distribution.
+        :param x_start: A point that satisfies all constraints. If not provided, the sampler tries to find one.
+        :param delta: The stepsize.
         """
-        # Check input for consistency.
-        assert constrained_gaussian.satisfies_constraints(x_0, tol=EPS)
-        # Load delta.
-        delta = options.setdefault("delta", 1.)
+        Sampler.__init__(self, constrained_gaussian=constrained_gaussian, x_start=x_start)
         if delta <= 0.:
             raise ValueError("'delta' must be strictly positive.")
         self._delta = delta
-        self._dim = constrained_gaussian.dim
-        # Call constructor of Sampler.
-        Sampler.__init__(self, constrained_gaussian=constrained_gaussian, x_0=x_0, options=options)
-        self._x_start = x_0
         # Initialize proximal operator.
         self._prox = CLSProximal(constrained_gaussian=constrained_gaussian)
         self._congau = constrained_gaussian
@@ -36,15 +32,19 @@ class PxMALA(Sampler):
         self._m = constrained_gaussian.m
         self._acceptance_counter = 0
 
-    def warmup(self, num_warmup: int):
+    def _run_warmup(self, num_warmup: int) -> np.ndarray:
         # Initialize
         x = self._x_start
         print("Starting warmup...")
-        for i in range(num_warmup):
+        sample_list = []
+        for i in range(1, num_warmup + 1):
             print("\r", end="")
-            print(f"Warmup: {i+1}/{num_warmup}.", end=" ")
+            print(f"Warmup: {i}/{num_warmup}.", end=" ")
             x = self._step(x)
+            sample_list.append(x)
         self._x_start = x
+        samples = np.array(sample_list)
+        return samples
 
     def sample(self, num_sample: int):
         x = self._x_start
@@ -60,7 +60,7 @@ class PxMALA(Sampler):
         Performs one iteration of PxMALA and returns the next iterate.
         """
         xi = self._prox.evaluate(x, self._delta)
-        z = np.random.randn(self._dim)
+        z = np.random.randn(self.dim)
         y = xi + sqrt(2 * self._delta) * z
         # If y violates the constraints, we are already done.
         if not self._congau.satisfies_constraints(y, tol=1e-2):
@@ -83,4 +83,5 @@ class PxMALA(Sampler):
                 self._acceptance_counter += 1
             else:
                 x_next = x
+        self._sample_counter += 1
         return x_next

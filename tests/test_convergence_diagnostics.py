@@ -1,6 +1,6 @@
 
 import numpy as np
-from pxcgaussianmcmc.convergence_diagnostics import effective_sample_size, r_hat, w_value
+from pxcgaussianmcmc.convergence_diagnostics import effective_sample_size, r_hat, sufficient_sample_size
 
 
 def test_ess_independent():
@@ -30,7 +30,7 @@ def test_w_value():
     alpha = 0.05
     eps = 0.1
     d = 3
-    w = w_value(d, alpha, eps)
+    w = sufficient_sample_size(d, alpha, eps)
 
     print(f"W({d},{alpha},{eps}) = {w}.")
 
@@ -39,7 +39,7 @@ def test_w_large():
     alpha = 0.01
     eps = 0.1
     d = 636
-    w = w_value(d, alpha, eps)
+    w = sufficient_sample_size(d, alpha, eps)
 
     print(f"W({d},{alpha},{eps}) = {w}.")
 

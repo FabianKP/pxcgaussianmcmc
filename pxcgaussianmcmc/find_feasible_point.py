@@ -1,6 +1,5 @@
 import numpy as np
 import qpsolvers
-from typing import Union
 
 from .constrained_gaussian import ConstrainedGaussian
 from .empty_to_none import empty_to_none

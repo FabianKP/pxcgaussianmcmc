@@ -1,6 +1,12 @@
 
 import numpy as np
+import qpsolvers
 from typing import Optional
+
+from .empty_to_none import empty_to_none
+
+
+EPS = 1e-15
 
 
 class ConstrainedGaussian:
@@ -23,6 +29,20 @@ class ConstrainedGaussian:
     def __init__(self, P: np.ndarray, m: np.ndarray, A: Optional[np.ndarray] = None, b: Optional[np.ndarray] = None,
                  C: Optional[np.ndarray] = None, d: Optional[np.ndarray] = None, lb: Optional[np.ndarray] = None,
                  ub: Optional[np.ndarray] = None):
+        """
+
+        :param P: Of shape (d, d). The PRECISION matrix (i.e. inverse of covariance).
+        Must be a symmetric positive definite matrix.
+        :param m: Of shape (d, ).
+        :param A: Of shape (m, d).
+        :param b: Of shape (m, ).
+        :param C: Of shape (l, d).
+        :param d: Of shape (l, ).
+        :param lb: Of shape (d, ). Setting an entry to - np.inf means that the corresponding coordinate is unbounded from
+            below.
+        :param ub: Of shape (d, ). Setting an entry to np.inf means that the corresponding coordinate is unbounded from
+            above.
+        """
         # Check that input is consistent.
         assert P.ndim == 2, "Sigma must be a matrix."
         dim = P.shape[0]

@@ -1,6 +1,6 @@
 
-from .pxcgaussian import pxcgaussian
+from .constrained_gaussian import ConstrainedGaussian
+from .convergence_diagnostics import sufficient_sample_size
 from .sampler_result import SamplerResult
 from .pxmala import PxMALA
 from .mymala import MYMALA
-from .w_value import w_value

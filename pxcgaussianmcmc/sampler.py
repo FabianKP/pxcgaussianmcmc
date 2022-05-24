@@ -1,7 +1,14 @@
 
 import numpy as np
+from typing import Optional
 
 from .constrained_gaussian import ConstrainedGaussian
+from .convergence_diagnostics import effective_sample_size, r_hat
+from .find_feasible_point import find_feasible_point
+from .sampler_result import SamplerResult
+
+
+EPS = 1e-15
 
 
 class Sampler:
@@ -9,29 +16,53 @@ class Sampler:
     This is the proximal MCMC sampler.
     """
 
-    def __init__(self, constrained_gaussian: ConstrainedGaussian, x_0: np.ndarray, options: dict):
+    def __init__(self, constrained_gaussian: ConstrainedGaussian, x_start: Optional[np.ndarray] = None):
+        """
+
+        :param constrained_gaussian: An object of type pxcgaussianmcmc.ConstrainedGaussian, containing all the
+            information about the target distribution.
+        :param x_start: A point that satisfies all constraints. If not provided, the sampler tries to find one.
+        """
         self._constrained_gaussian = constrained_gaussian
+        self.dim = constrained_gaussian.dim
         # Initialize list in which samples are stored.
         self._sample_list = []
         self._acceptance_counter = 0
+        self._sample_counter = 0
 
-    @property
-    def samples(self) -> np.ndarray:
+        # Check that x_start satisfies all constraints, or try to find a feasible point.
+        if x_start is None:
+            self._x_start = find_feasible_point(constrained_gaussian)
+        else:
+            if constrained_gaussian.satisfies_constraints(x_start, tol=EPS):
+                self._x_start = x_start
+            else:
+                raise ValueError("'x_start' does not satisfy all constraints.")
+
+    def get_result(self) -> SamplerResult:
         """
         The current array of samples. This is either an empty array, if there are no samples yet, or of shape (n, d),
         where n is the number of samples.
         """
-        return np.array(self._sample_list)
+        assert len(self._sample_list) == self._sample_counter
+        sample_arr = np.array(self._sample_list)
+        return self._samples_to_result(sample_arr)
 
-    def warmup(self, num_warmup: int):
+    def warmup(self, num_warmup: int) -> SamplerResult:
         """
         Performs burn-in.
 
         :param num_warmup: Number of burnin-steps.
+        :returns result: Returns pxcgaussianmcmc.SamplerResult object.
         """
-        raise NotImplementedError
+        warmup_samples = self._run_warmup(num_warmup)
+        warmup_result = self._samples_to_result(warmup_samples)
+        # Reset counters.
+        self._acceptance_counter = 0
+        self._sample_counter = 0
+        return warmup_result
 
-    def sample(self, num_sample):
+    def sample(self, num_sample: int):
         """
         Runs the chain a desired number of steps and appends the results to self._sample_list
 
@@ -39,27 +70,19 @@ class Sampler:
         """
         raise NotImplementedError
 
-    @property
-    def r_hat(self) -> float:
-        """
-        Computes the R_hat statistic for the current list of samples. See mathematical documentation for the details.
-        """
-        #TODO: Implement (here).
-        return 0.
+    def _run_warmup(self, num_warmup: int) -> np.ndarray:
+        raise NotImplementedError
 
-    @property
-    def ess(self) -> float:
-        """
-        Computes the effective sample size for the current list of samples. See mathematical documentation for the
-        details.
-        """
-        #TODO: Implement (here).
-        return 0.
+    def _samples_to_result(self, samples: np.ndarray) -> SamplerResult:
+        r = r_hat(samples)
+        ess = effective_sample_size(samples)
+        aratio = self._compute_acceptance_ratio()
+        result = SamplerResult(samples=samples, r_hat=r, ess=ess, aratio=aratio)
+        return result
 
-    @property
-    def acceptance_ratio(self) -> float:
+    def _compute_acceptance_ratio(self) -> float:
         """
         Returns the acceptance ratio.
         """
-        acceptance_ratio = self._acceptance_counter / len(self._sample_list)
+        acceptance_ratio = self._acceptance_counter / self._sample_counter
         return acceptance_ratio

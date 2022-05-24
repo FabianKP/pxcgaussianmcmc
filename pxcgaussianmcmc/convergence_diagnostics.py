@@ -63,31 +63,34 @@ def r_hat(samples: np.ndarray, b: Optional[int] = None) -> float:
     return R_hat
 
 
-def w_value(d: int, alpha: float, epsilon: float):
+def sufficient_sample_size(dim: int, alpha: float, epsilon: float):
     """
-    Computes W(alpha, epsilon, d) (see mathematical documentation).
+    The minimum required effective sample size for a given confidence level and given Monte Carlo precision.
 
     Since there is a Gamma function present, we have to use Stirlings approximation for larger values of d (d >= 20):
     Gamma(z) >= sqrt(2 pi / z) * (z / e)^z.
 
-    :param alpha:
-    :param epsilon:
-    :param d:
-    :return:
+    :param dim: The dimension of the parameter space.
+    :param alpha: The desired confidence level, e.g. alpha = 0.05 for 95%-confidence.
+    :param epsilon: Desired relative precision, e.g. epsilon = 0.1 means that approximately 10% of the variability
+            of the samples comes from the Monte Carlo error.
+    :return: Returns the numerical value of W(d, alpha, epsilon). The formula for this is
+            W(d, alpha, epsilon) = 2 ** (2 / dim) * pi * chi2(1 - alpha, dim) /
+                                    (dim * Gamma(dim/2)) ** (2 / dim) * epsilon ** 2 ).
     """
     # Check input.
     assert 0 <= alpha <= 1.
     assert 0 <= epsilon
-    assert d >= 1
+    assert dim >= 1
     # Compute W(d, alpha, epsilon)
-    chi2_alpha_d = chi2.ppf(q=1 - alpha, df=d)
+    chi2_alpha_d = chi2.ppf(q=1 - alpha, df=dim)
     alpha_epsilon_factor = chi2_alpha_d / (epsilon * epsilon)
-    if d <= 20:
-        gamma_d_half = gamma(d / 2)
-        denominator = pow(d * gamma_d_half, 2 / d)
-        d_factor = pow(2, (2 / d)) * pi / denominator
+    if dim <= 20:
+        gamma_d_half = gamma(dim / 2)
+        denominator = pow(dim * gamma_d_half, 2 / dim)
+        d_factor = pow(2, (2 / dim)) * pi / denominator
     else:
-        d_factor = exp(1) * pow(2, 2 / d) / (2 * d)
+        d_factor = exp(1) * pow(2, 2 / dim) / (2 * dim)
 
     w = d_factor * alpha_epsilon_factor
 
