@@ -10,4 +10,5 @@ For a high-level mathematical documentation, see [here]().
 TODO
 ----
 
-12. Create improved interface. Let user handle the sampling. In return, don't have to implement autotune.
+1. Update mathematical documentation.
+2. Write nice README.
